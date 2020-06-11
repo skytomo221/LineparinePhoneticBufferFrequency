@@ -1,5 +1,6 @@
 ﻿using Otamajakushi;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,50 +11,34 @@ namespace LineparinePhoneticBufferFrequency
     {
         static void Main(string[] args)
         {
-            var dictionary =
+            var dictionary = 
                 from word in OneToManyJsonSerializer.Deserialize(File.ReadAllText(@"dictionary.json")).Words
                 select word.Entry.Form;
             using (StreamReader sr = new StreamReader("input.txt"))
             using (StreamWriter sw = new StreamWriter("output.txt"))
             {
-                sw.Write(
-                    sr
-                    .ReadToEnd()
-                    .Split('\n')
-                    .Distinct()
-                    .Where(word => !dictionary.Contains(word))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'s$") && dictionary.Contains(word.Replace("'s", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'i$") && dictionary.Contains(word.Replace("'i", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'c$") && dictionary.Contains(word.Replace("'c", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'d$") && dictionary.Contains(word.Replace("'d", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'dy$") && dictionary.Contains(word.Replace("'dy", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'l$") && dictionary.Contains(word.Replace("'l", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+sti$") && dictionary.Contains(word.Replace("sti", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'tj$") && dictionary.Contains(word.Replace("'tj", string.Empty))))
-                    .Where(word => !(Regex.IsMatch(word, @"^.+'sci$") && dictionary.Contains(word.Replace("'sci", string.Empty))))
-                    .Where(word => !Regex.IsMatch(word, @"^\d+$"))
-                    .Aggregate((now, next) => now + "\n" + next));
-            }
-            using (StreamReader sr = new StreamReader("input.txt"))
-            using (StreamWriter sw = new StreamWriter("output2.txt"))
-            {
-                sw.Write(
-                    sr
-                    .ReadToEnd()
-                    .Split('\n')
-                    .Distinct()
-                    .Where(word => !dictionary.Contains(word))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'s$") && dictionary.Contains(word.Replace("'s", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'i$") && dictionary.Contains(word.Replace("'i", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'c$") && dictionary.Contains(word.Replace("'c", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'d$") && dictionary.Contains(word.Replace("'d", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'dy$") && dictionary.Contains(word.Replace("'dy", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'l$") && dictionary.Contains(word.Replace("'l", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]sti$") && dictionary.Contains(word.Replace("sti", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'tj$") && dictionary.Contains(word.Replace("'tj", string.Empty))))
-                    .Where(word => (Regex.IsMatch(word, @"^.+[^aeiouyr]'sci$") && dictionary.Contains(word.Replace("'sci", string.Empty))))
-                    .Where(word => !Regex.IsMatch(word, @"^\d+$")).Count());
-//                    .Aggregate((now, next) => now + "\n" + next));
+                var words =
+                   from word in sr.ReadToEnd().Split('\n')
+                   .Distinct()
+                   where !dictionary.Contains(word)
+                   select word;
+                foreach (var word in words)
+                {
+                    var subword = string.Empty;
+                    int start = 0;
+                    for (int end = word.Length - 1; end >= 0 ; end--)
+                    {
+                        subword = subword.Substring(start, end - start);
+                        var subwords = new List<string>();
+                        if (dictionary.Contains(subword))
+                        {
+                            subwords.Add(subword);
+                        }
+                    }
+                }
+                //dictionary.Words =
+                //    from word in dictionary.Words
+                //    where word.Translations.Find(x => x.Title == )
             }
         }
     }
