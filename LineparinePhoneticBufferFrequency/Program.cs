@@ -1,4 +1,4 @@
-﻿using Otamajakushi;
+using Otamajakushi;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,7 +18,15 @@ namespace LineparinePhoneticBufferFrequency
         {
             public int All { get; set; }
             public int Buffer { get; set; }
-            public List<Tuple<string, List<string>>> Example { get; set; }
+            public List<Example> Examples { get; set; }
+        }
+
+        class Example
+        {
+            public string Word { get; set; }
+            public List<string> Decomposition { get; set; }
+            public int FastLetterIndex { get; set; }
+            public int LastLetterIndex { get; set; }
         }
 
         static void Main(string[] args)
@@ -42,17 +50,24 @@ namespace LineparinePhoneticBufferFrequency
                 var decomposer = new LineparineDecomposer.LineparineDecomposer();
                 foreach (var word in words)
                 {
-                    var subwords = decomposer.Decompose(word).FirstOrDefault() ?? new List<string>();
-                    if (word == string.Join(string.Empty, subwords).Replace("-", string.Empty))
+                    var decomposition = decomposer.Decompose(word).FirstOrDefault() ?? new List<string>();
+                    if (word == string.Join(string.Empty, decomposition).Replace("-", string.Empty))
                     {
                         var count = CountString(text, word);
-                        if (subwords.Count == 2)
+                        if (decomposition.Count == 2)
                         {
-                            var tuple = new Tuple<char, char>(LastLetter(subwords[0]), FirstLetter(subwords[1]));
+                            var tuple = new Tuple<char, char>(LastLetter(decomposition[0]), FirstLetter(decomposition[1]));
                             if (table.ContainsKey(tuple))
                             {
                                 table[tuple].All += count;
-                                table[tuple].Example.Add(new Tuple<string, List<string>>(word, subwords));
+                                table[tuple].Examples.Add(
+                                    new Example
+                                    {
+                                        Word = word,
+                                        Decomposition = decomposition,
+                                        FastLetterIndex = 0,
+                                        LastLetterIndex = 1,
+                                    });
                             }
                             else
                             {
@@ -60,26 +75,38 @@ namespace LineparinePhoneticBufferFrequency
                                 {
                                     All = count,
                                     Buffer = 0,
-                                    Example = new List<Tuple<string, List<string>>>
+                                    Examples = new List<Example>
                                     {
-                                        new Tuple<string, List<string>> (word, subwords),
+                                        new Example {
+                                            Word = word,
+                                            Decomposition = decomposition,
+                                            FastLetterIndex = 0,
+                                            LastLetterIndex = 1,
+                                        },
                                     }
                                 });
                             }
                         }
                         else
                         {
-                            for (int i = 1; i < subwords.Count - 1; i++)
+                            for (int i = 1; i < decomposition.Count - 1; i++)
                             {
                                 var buffer = new List<string> { "-a-", "-e-", "-i-", "-l-", "-m-", "-rg-", "-u-", "-v-", "eu-", "-eu", };
-                                if (buffer.Contains(subwords[i]))
+                                if (buffer.Contains(decomposition[i]))
                                 {
-                                    var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i + 1]));
+                                    var tuple = new Tuple<char, char>(LastLetter(decomposition[i - 1]), FirstLetter(decomposition[i + 1]));
                                     if (table.ContainsKey(tuple))
                                     {
                                         table[tuple].All += count;
                                         table[tuple].Buffer += count;
-                                        table[tuple].Example.Add(new Tuple<string, List<string>>(word, subwords));
+                                        table[tuple].Examples.Add(
+                                            new Example
+                                            {
+                                                Word = word,
+                                                Decomposition = decomposition,
+                                                FastLetterIndex = i - 1,
+                                                LastLetterIndex = i + 1,
+                                            });
                                     }
                                     else
                                     {
@@ -87,20 +114,32 @@ namespace LineparinePhoneticBufferFrequency
                                         {
                                             All = count,
                                             Buffer = count,
-                                            Example = new List<Tuple<string, List<string>>>
+                                            Examples = new List<Example>
                                             {
-                                                new Tuple<string, List<string>> (word, subwords),
-                                            }
+                                                new Example {
+                                                    Word = word,
+                                                    Decomposition = decomposition,
+                                                    FastLetterIndex = i - 1,
+                                                    LastLetterIndex = i + 1,
+                                               },
+                                            },
                                         });
                                     }
                                 }
                                 else
                                 {
-                                    var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i]));
+                                    var tuple = new Tuple<char, char>(LastLetter(decomposition[i - 1]), FirstLetter(decomposition[i]));
                                     if (table.ContainsKey(tuple))
                                     {
                                         table[tuple].All += count;
-                                        table[tuple].Example.Add(new Tuple<string, List<string>>(word, subwords));
+                                        table[tuple].Examples.Add(
+                                            new Example
+                                            {
+                                                Word = word,
+                                                Decomposition = decomposition,
+                                                FastLetterIndex = i - 1,
+                                                LastLetterIndex = i,
+                                            });
                                     }
                                     else
                                     {
@@ -108,10 +147,15 @@ namespace LineparinePhoneticBufferFrequency
                                         {
                                             All = count,
                                             Buffer = 0,
-                                            Example = new List<Tuple<string, List<string>>>
+                                            Examples = new List<Example>
                                             {
-                                                new Tuple<string, List<string>> (word, subwords),
-                                            }
+                                                new Example {
+                                                    Word = word,
+                                                    Decomposition = decomposition,
+                                                    FastLetterIndex = i - 1,
+                                                    LastLetterIndex = i,
+                                                },
+                                            },
                                         });
                                     }
                                 }
@@ -120,10 +164,10 @@ namespace LineparinePhoneticBufferFrequency
                     }
                     else
                     {
-                        subwords.Add("(ERROR)");
+                        decomposition.Add("(ERROR)");
                     }
-                    Console.WriteLine(word + " => " + string.Join(" ", subwords));
-                    sw.WriteLine(word + "\t" + string.Join(" ", subwords));
+                    Console.WriteLine(word + " => " + string.Join(" ", decomposition));
+                    sw.WriteLine(word + "\t" + string.Join(" ", decomposition));
                 }
                 var alphabet = new List<char> { 'i', 'y', 'u', 'o', 'e', 'a', 'p', 'f', 't', 'c', 'x', 'k', 'q', 'h', 'r', 'z', 'm', 'n', 'r', 'l', 'j', 'w', 'b', 'v', 'd', 's', 'g', };
                 foreach (var first in alphabet)
@@ -133,8 +177,8 @@ namespace LineparinePhoneticBufferFrequency
                         var tuple = new Tuple<char, char>(first, last);
                         if (table.ContainsKey(tuple))
                         {
-                            var example = table[tuple].Example
-                                .Select(w => $"{w.Item1}\t{string.Join(" ", w.Item2)}")
+                            var example = table[tuple].Examples
+                                .Select(w => $"{w.Word}\t{string.Join(" ", w.Decomposition)}\t{w.FastLetterIndex}\t{w.LastLetterIndex}")
                                 .Aggregate((now, next) => $"{now}\n{next}");
                             swAll.Write(table[tuple].All + "\t");
                             swBuffer.Write(table[tuple].Buffer + "\t");
