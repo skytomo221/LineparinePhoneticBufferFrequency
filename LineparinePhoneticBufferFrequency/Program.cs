@@ -1,4 +1,4 @@
-using Otamajakushi;
+﻿using Otamajakushi;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,8 +10,38 @@ namespace LineparinePhoneticBufferFrequency
 {
     class Program
     {
-        static char FirstLetter(string word) => word.Replace("-", string.Empty).Replace("'", string.Empty)[0];
-        static char LastLetter(string word) => word.Replace("-", string.Empty).Replace("'", string.Empty).Reverse().First();
+        static string FirstLetter(string word)
+        {
+            var letters = new List<string> {
+                "fh", "vh", "dz", "ph", "ts", "ch", "ng", "sh", "th", "dh", "kh", "rkh", "rl",
+                "i", "y", "u", "o", "e", "a",
+                "p", "f", "t", "c", "x", "k", "q", "h", "r", "z", "m", "n", "r", "l", "j", "w", "b", "v", "d", "s", "g", };
+            foreach (var letter in letters)
+            {
+                if (word.Replace("-", string.Empty).Replace("'", string.Empty).StartsWith(letter))
+                {
+                    return letter;
+                }
+            }
+            return word;
+        }
+
+        static string LastLetter(string word)
+        {
+            var letters = new List<string> {
+                "fh", "vh", "dz", "ph", "ts", "ch", "ng", "sh", "th", "dh", "kh", "rkh", "rl",
+                "i", "y", "u", "o", "e", "a",
+                "p", "f", "t", "c", "x", "k", "q", "h", "r", "z", "m", "n", "r", "l", "j", "w", "b", "v", "d", "s", "g", };
+            foreach (var letter in letters)
+            {
+                if (word.Replace("-", string.Empty).Replace("'", string.Empty).EndsWith(letter))
+                {
+                    return letter;
+                }
+            }
+            return word;
+        }
+
         static int CountString(string text, string word) => (text.Length - text.Replace(word, string.Empty).Length) / word.Length;
 
         class BufferData
@@ -34,7 +64,7 @@ namespace LineparinePhoneticBufferFrequency
             var dictionary =
                 from word in OneToManyJsonSerializer.Deserialize(File.ReadAllText(@"dictionary.json")).Words
                 select word.Entry.Form;
-            var table = new Dictionary<Tuple<char, char>, BufferData>();
+            var table = new Dictionary<Tuple<string, string>, BufferData>();
             using (StreamReader sr = new StreamReader("input.txt"))
             using (StreamWriter sw = new StreamWriter("output.tsv"))
             using (StreamWriter swBuffer = new StreamWriter("buffer.tsv"))
@@ -56,7 +86,7 @@ namespace LineparinePhoneticBufferFrequency
                         var count = CountString(text, word);
                         if (decomposition.Count == 2)
                         {
-                            var tuple = new Tuple<char, char>(LastLetter(decomposition[0]), FirstLetter(decomposition[1]));
+                            var tuple = new Tuple<string, string>(LastLetter(decomposition[0]), FirstLetter(decomposition[1]));
                             if (table.ContainsKey(tuple))
                             {
                                 table[tuple].All += count;
@@ -94,7 +124,7 @@ namespace LineparinePhoneticBufferFrequency
                                 var buffer = new List<string> { "-a-", "-e-", "-i-", "-l-", "-m-", "-rg-", "-u-", "-v-", "eu-", "-eu", };
                                 if (buffer.Contains(decomposition[i]))
                                 {
-                                    var tuple = new Tuple<char, char>(LastLetter(decomposition[i - 1]), FirstLetter(decomposition[i + 1]));
+                                    var tuple = new Tuple<string, string>(LastLetter(decomposition[i - 1]), FirstLetter(decomposition[i + 1]));
                                     if (table.ContainsKey(tuple))
                                     {
                                         table[tuple].All += count;
@@ -128,7 +158,7 @@ namespace LineparinePhoneticBufferFrequency
                                 }
                                 else
                                 {
-                                    var tuple = new Tuple<char, char>(LastLetter(decomposition[i - 1]), FirstLetter(decomposition[i]));
+                                    var tuple = new Tuple<string, string>(LastLetter(decomposition[i - 1]), FirstLetter(decomposition[i]));
                                     if (table.ContainsKey(tuple))
                                     {
                                         table[tuple].All += count;
@@ -169,12 +199,20 @@ namespace LineparinePhoneticBufferFrequency
                     Console.WriteLine(word + " => " + string.Join(" ", decomposition));
                     sw.WriteLine(word + "\t" + string.Join(" ", decomposition));
                 }
-                var alphabet = new List<char> { 'i', 'y', 'u', 'o', 'e', 'a', 'p', 'f', 't', 'c', 'x', 'k', 'q', 'h', 'r', 'z', 'm', 'n', 'r', 'l', 'j', 'w', 'b', 'v', 'd', 's', 'g', };
+                var alphabet = new List<string> {
+                    "i", "y", "u", "o", "e", "a",
+                    "p", "fh", "f", "t", "c", "x",
+                    "k", "q", "h", "r", "z", "m",
+                    "n", "r", "l", "j", "w", "b",
+                    "vh", "v", "d", "s", "g", "dz",
+                    "ph", "ts", "ch", "ng", "sh",
+                    "th", "dh", "kh", "rkh", "rl",
+                };
                 foreach (var first in alphabet)
                 {
                     foreach (var last in alphabet)
                     {
-                        var tuple = new Tuple<char, char>(first, last);
+                        var tuple = new Tuple<string, string>(first, last);
                         if (table.ContainsKey(tuple))
                         {
                             var example = table[tuple].Examples
