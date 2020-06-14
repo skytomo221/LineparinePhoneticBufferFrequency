@@ -4,20 +4,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using LineparineDecomposer;
 
 namespace LineparinePhoneticBufferFrequency
 {
     class Program
     {
-        static char FirstLetter(string word) => word.Replace("'", string.Empty)[0];
-        static char LastLetter(string word) => word.Replace("'", string.Empty).Reverse().First();
+        static char FirstLetter(string word) => word.Replace("-", string.Empty).Replace("'", string.Empty)[0];
+        static char LastLetter(string word) => word.Replace("-", string.Empty).Replace("'", string.Empty).Reverse().First();
         static int CountString(string text, string word) => (text.Length - text.Replace(word, string.Empty).Length) / word.Length;
+
+        class BufferData
+        {
+            public int All { get; set; }
+            public int Buffer { get; set; }
+            public List<Tuple<string, List<string>>> Example { get; set; }
+        }
 
         static void Main(string[] args)
         {
             var dictionary =
                 from word in OneToManyJsonSerializer.Deserialize(File.ReadAllText(@"dictionary.json")).Words
                 select word.Entry.Form;
+            var table = new Dictionary<Tuple<char, char>, BufferData>();
             var allTable = new Dictionary<Tuple<char, char>, int>();
             var bufferTable = new Dictionary<Tuple<char, char>, int>();
             var exampleTable = new Dictionary<Tuple<char, char>, List<string>>();
@@ -36,85 +45,79 @@ namespace LineparinePhoneticBufferFrequency
                 dictionary =
                     from word in OneToManyJsonSerializer.Deserialize(File.ReadAllText(@"dictionary.json")).Words
                     select word.Entry.Form.Replace("-", string.Empty);
+                var decomposer = new LineparineDecomposer.LineparineDecomposer();
                 foreach (var word in words)
                 {
-                    int start = 0;
-                    int length = word.Length;
-                    var subword = string.Empty;
-                    var subwords = new List<string>();
-                    while (length - start >= 0)
+                    var subwords = decomposer.Decompose(word).FirstOrDefault() ?? new List<string>();
+                    if (word == string.Join(string.Empty, subwords).Replace("-", string.Empty))
                     {
-                        subword = word.Substring(start, length - start);
-                        if (dictionary.Contains(subword))
-                        {
-                            subwords.Add(subword);
-                            start += subword.Length;
-                            length = word.Length;
-                        }
-                        else
-                        {
-                            length--;
-                        }
-                    }
-                    if (word == string.Join(string.Empty, subwords))
-                    {
-                        var buffer = new List<string> { "v", "rg", "m", "l", "eu", "a", "e", "u", "i" };
+                        var buffer = new List<string> { "-a-", "-e-", "-i-", "-l-", "-m-", "-rg-", "-u-", "-v-", };
+                        var count = CountString(text, word);
                         if (subwords.Count == 2)
                         {
-                            var count = CountString(text, word);
                             var tuple = new Tuple<char, char>(LastLetter(subwords[0]), FirstLetter(subwords[1]));
-                            if (allTable.ContainsKey(tuple))
+                            if (table.ContainsKey(tuple))
                             {
-                                allTable[tuple] += count;
-                                exampleTable[tuple].Add(word + "\t" + string.Join(" ", subwords) + "\t" + count);
+                                table[tuple].All += count;
+                                table[tuple].Example.Add(new Tuple<string, List<string>>(word, subwords));
                             }
                             else
                             {
-                                allTable.Add(tuple, count);
-                                exampleTable.Add(tuple, new List<string> { word + "\t" + string.Join(" ", subwords) + "\t" + count });
+                                table.Add(tuple, new BufferData
+                                {
+                                    All = count,
+                                    Buffer = 0,
+                                    Example = new List<Tuple<string, List<string>>>
+                                    {
+                                        new Tuple<string, List<string>> (word, subwords),
+                                    }
+                                });
                             }
                         }
                         else
                         {
                             for (int i = 1; i < subwords.Count - 1; i++)
                             {
+                                var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i + 1]));
                                 if (buffer.Contains(subwords[i]))
                                 {
-                                    var count = CountString(text, word);
-                                    var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i + 1]));
-                                    if (bufferTable.ContainsKey(tuple))
+                                    if (table.ContainsKey(tuple))
                                     {
-                                        bufferTable[tuple] += count;
+                                        table[tuple].All += count;
+                                        table[tuple].Buffer += count;
+                                        table[tuple].Example.Add(new Tuple<string, List<string>>(word, subwords));
                                     }
                                     else
                                     {
-                                        bufferTable.Add(tuple, count);
-
-                                    }
-                                    if (allTable.ContainsKey(tuple))
-                                    {
-                                        allTable[tuple] += count;
-                                        exampleTable[tuple].Add(word + "\t" + string.Join(" ", subwords) + "\t" + count);
-                                    }
-                                    else
-                                    {
-                                        allTable.Add(tuple, count);
-                                        exampleTable.Add(tuple, new List<string> { word + "\t" + string.Join(" ", subwords) + "\t" + count });
+                                        table.Add(tuple, new BufferData
+                                        {
+                                            All = count,
+                                            Buffer = count,
+                                            Example = new List<Tuple<string, List<string>>>
+                                            {
+                                                new Tuple<string, List<string>> (word, subwords),
+                                            }
+                                        });
                                     }
                                 }
                                 else
                                 {
-                                    var count = CountString(text, word);
-                                    var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i]));
-                                    if (allTable.ContainsKey(tuple))
+                                    if (table.ContainsKey(tuple))
                                     {
-                                        allTable[tuple] += count;
-                                        exampleTable[tuple].Add(word + "\t" + string.Join(" ", subwords) + "\t" + count);
+                                        table[tuple].All += count;
+                                        table[tuple].Example.Add(new Tuple<string, List<string>>(word, subwords));
                                     }
                                     else
                                     {
-                                        allTable.Add(tuple, count);
-                                        exampleTable.Add(tuple, new List<string> { word + "\t" + string.Join(" ", subwords) + "\t" + count });
+                                        table.Add(tuple, new BufferData
+                                        {
+                                            All = count,
+                                            Buffer = 0,
+                                            Example = new List<Tuple<string, List<string>>>
+                                            {
+                                                new Tuple<string, List<string>> (word, subwords),
+                                            }
+                                        });
                                     }
                                 }
                             }
@@ -133,22 +136,19 @@ namespace LineparinePhoneticBufferFrequency
                     foreach (var last in alphabet)
                     {
                         var tuple = new Tuple<char, char>(first, last);
-                        if (bufferTable.ContainsKey(tuple))
+                        if (table.ContainsKey(tuple))
                         {
-                            swBuffer.Write(bufferTable[tuple] + "\t");
-                        }
-                        else
-                        {
-                            swBuffer.Write("0\t");
-                        }
-                        if (allTable.ContainsKey(tuple))
-                        {
-                            swAll.Write(allTable[tuple] + "\t");
-                            swExample.WriteLine($"{first.ToString()} + {last.ToString()}\n{exampleTable[tuple].Aggregate((now, next) => now + "\n" + next)}");
+                            swAll.Write(table[tuple].All + "\t");
+                            swBuffer.Write(table[tuple].Buffer + "\t");
+                            swExample.WriteLine(
+                                $"{first.ToString()} +" +
+                                $"{last.ToString()}\n" +
+                                $"{table[tuple].Example.Select(w => $"{w.Item1}\t{string.Join(" ", w.Item2)}").Aggregate((now, next) => $"{now}\n{next}")}");
                             swExample.WriteLine();
                         }
                         else
                         {
+                            swBuffer.Write("0\t");
                             swAll.Write("0\t");
                         }
                     }

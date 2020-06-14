@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LineparineWordsFrequency", "LineparineWordsFrequency\LineparineWordsFrequency.csproj", "{F43E077F-7734-493A-A175-0035EFE51695}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LineparinePhoneticBufferFrequency", "LineparinePhoneticBufferFrequency\LineparinePhoneticBufferFrequency.csproj", "{4F2717A6-6F0B-4290-921B-AAA71C79D9F9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CC6F0A48-26F1-4AE5-B72E-96A8DE2048ED} = {CC6F0A48-26F1-4AE5-B72E-96A8DE2048ED}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LineparineDecomposer", "LineparineDecomposer\LineparineDecomposer.csproj", "{CC6F0A48-26F1-4AE5-B72E-96A8DE2048ED}"
 EndProject

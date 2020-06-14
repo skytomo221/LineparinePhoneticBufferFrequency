@@ -15,7 +15,7 @@ using System.Linq;
 
 namespace LineparineDecomposer
 {
-    class LineparineDecomposer
+    public class LineparineDecomposer
     {
         public List<List<string>> Decompose(string text)
         {
