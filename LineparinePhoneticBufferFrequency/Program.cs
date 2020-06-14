@@ -71,10 +71,10 @@ namespace LineparinePhoneticBufferFrequency
                         {
                             for (int i = 1; i < subwords.Count - 1; i++)
                             {
-                                var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i + 1]));
                                 var buffer = new List<string> { "-a-", "-e-", "-i-", "-l-", "-m-", "-rg-", "-u-", "-v-", "eu-", "-eu", };
                                 if (buffer.Contains(subwords[i]))
                                 {
+                                    var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i + 1]));
                                     if (table.ContainsKey(tuple))
                                     {
                                         table[tuple].All += count;
@@ -96,6 +96,7 @@ namespace LineparinePhoneticBufferFrequency
                                 }
                                 else
                                 {
+                                    var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i]));
                                     if (table.ContainsKey(tuple))
                                     {
                                         table[tuple].All += count;
