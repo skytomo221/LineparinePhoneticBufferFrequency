@@ -27,9 +27,6 @@ namespace LineparinePhoneticBufferFrequency
                 from word in OneToManyJsonSerializer.Deserialize(File.ReadAllText(@"dictionary.json")).Words
                 select word.Entry.Form;
             var table = new Dictionary<Tuple<char, char>, BufferData>();
-            var allTable = new Dictionary<Tuple<char, char>, int>();
-            var bufferTable = new Dictionary<Tuple<char, char>, int>();
-            var exampleTable = new Dictionary<Tuple<char, char>, List<string>>();
             using (StreamReader sr = new StreamReader("input.txt"))
             using (StreamWriter sw = new StreamWriter("output.tsv"))
             using (StreamWriter swBuffer = new StreamWriter("buffer.tsv"))
@@ -42,16 +39,12 @@ namespace LineparinePhoneticBufferFrequency
                    .Distinct()
                    where !dictionary.Contains(word)
                    select word;
-                dictionary =
-                    from word in OneToManyJsonSerializer.Deserialize(File.ReadAllText(@"dictionary.json")).Words
-                    select word.Entry.Form.Replace("-", string.Empty);
                 var decomposer = new LineparineDecomposer.LineparineDecomposer();
                 foreach (var word in words)
                 {
                     var subwords = decomposer.Decompose(word).FirstOrDefault() ?? new List<string>();
                     if (word == string.Join(string.Empty, subwords).Replace("-", string.Empty))
                     {
-                        var buffer = new List<string> { "-a-", "-e-", "-i-", "-l-", "-m-", "-rg-", "-u-", "-v-", };
                         var count = CountString(text, word);
                         if (subwords.Count == 2)
                         {
@@ -79,6 +72,7 @@ namespace LineparinePhoneticBufferFrequency
                             for (int i = 1; i < subwords.Count - 1; i++)
                             {
                                 var tuple = new Tuple<char, char>(LastLetter(subwords[i - 1]), FirstLetter(subwords[i + 1]));
+                                var buffer = new List<string> { "-a-", "-e-", "-i-", "-l-", "-m-", "-rg-", "-u-", "-v-", "eu-", "-eu", };
                                 if (buffer.Contains(subwords[i]))
                                 {
                                     if (table.ContainsKey(tuple))
@@ -138,12 +132,12 @@ namespace LineparinePhoneticBufferFrequency
                         var tuple = new Tuple<char, char>(first, last);
                         if (table.ContainsKey(tuple))
                         {
+                            var example = table[tuple].Example
+                                .Select(w => $"{w.Item1}\t{string.Join(" ", w.Item2)}")
+                                .Aggregate((now, next) => $"{now}\n{next}");
                             swAll.Write(table[tuple].All + "\t");
                             swBuffer.Write(table[tuple].Buffer + "\t");
-                            swExample.WriteLine(
-                                $"{first.ToString()} +" +
-                                $"{last.ToString()}\n" +
-                                $"{table[tuple].Example.Select(w => $"{w.Item1}\t{string.Join(" ", w.Item2)}").Aggregate((now, next) => $"{now}\n{next}")}");
+                            swExample.WriteLine($"{first.ToString()} + {last.ToString()}\n{example}");
                             swExample.WriteLine();
                         }
                         else
