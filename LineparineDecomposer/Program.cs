@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LineparineDecomposer
 {
@@ -9,7 +10,13 @@ namespace LineparineDecomposer
         {
             var ld = new LineparineDecomposer();
             var ans = ld.Decompose("misse's");
-            Console.WriteLine(string.Join(" ", ans[0]));
+            Console.WriteLine(string.Join("\n", ans.Select(words => string.Join(" ", words))));
+            Console.WriteLine();
+            ans = ld.Decompose("elmenerfe");
+            Console.WriteLine(string.Join("\n", ans.Select(words => string.Join(" ", words))));
+            Console.WriteLine();
+            ans = ld.Decompose("axelinielmejten");
+            Console.WriteLine(string.Join("\n", ans.Select(words => string.Join(" ", words))));
         }
     }
 }
