@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace LineparinePhoneticBufferFrequency
 {
@@ -30,13 +31,13 @@ namespace LineparinePhoneticBufferFrequency
         {
             var letters = new List<string> {
                 "fh", "vh", "dz", "ph", "ts", "ch", "ng", "sh", "th", "dh", "kh", "rkh", "rl",
-                "i", "y", "u", "o", "e", "a",
+                "ir", "yr", "ur", "or", "er", "ar", "i", "y", "u", "o", "e", "a",
                 "p", "f", "t", "c", "x", "k", "q", "h", "r", "z", "m", "n", "r", "l", "j", "w", "b", "v", "d", "s", "g", };
             foreach (var letter in letters)
             {
                 if (word.Replace("-", string.Empty).Replace("'", string.Empty).EndsWith(letter))
                 {
-                    return letter;
+                    return Regex.Replace(letter, @"^(.)r$", @"$1");
                 }
             }
             return word;
@@ -46,7 +47,7 @@ namespace LineparinePhoneticBufferFrequency
 
         public Dictionary<Tuple<string, string>, BufferData> Analyze()
         {
-            var table = new Dictionary<Tuple<string, string>, BufferData>();           
+            var table = new Dictionary<Tuple<string, string>, BufferData>();
             var decomposer = new LineparineDecomposer.LineparineDecomposer();
             foreach (var word in Words)
             {
