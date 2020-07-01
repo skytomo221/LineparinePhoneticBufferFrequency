@@ -20,10 +20,10 @@ namespace LineparineDecomposer
     {
         public List<List<string>> Decompose(string text)
         {
-            return Decompose(text, "INITIAL", string.Empty);
+            return Decompose(text, "INITIAL", string.Empty, string.Empty);
         }
 
-        public List<List<string>> Decompose(string text, string previousState, string previousText)
+        public List<List<string>> Decompose(string text, string previousState, string previousText, string previousCandidatej)
         {
             var possibleStates =
                 from arr in W.Rules
@@ -47,10 +47,11 @@ namespace LineparineDecomposer
                 var candidate = W.Words[state].Where(c => text.StartsWith(c.Replace("-", string.Empty)));
                 foreach (var candidatej in candidate)
                 {
-                    if ((state == "-q1-" || state == "-q2-") && !previousText.IsMatchToClass(candidatej)) { continue; }
+                    if ((state == "-q1-" || state == "-q2-") && (!previousText.IsMatchToClass(candidatej))) { continue; }
+                    if (!previousCandidatej.IsMatchToCVBuffer(candidatej, previousState, state)) { continue; }
                     var substringLength = candidatej.Replace("-", string.Empty).Length;
                     var newText = substringLength <= text.Length ? text.Substring(substringLength) : string.Empty;
-                    var results = Decompose(newText, state, previousText + candidatej).Select(res => (new List<string> { candidatej }).Concat(res));
+                    var results = Decompose(newText, state, previousText + candidatej, candidatej).Select(res => (new List<string> { candidatej }).Concat(res));
                     ans = ans.Concat(results.Select(r => r.ToList())).ToList();
                 }
             }

@@ -9,14 +9,13 @@ namespace LineparineDecomposer
         static void Main(string[] args)
         {
             var ld = new LineparineDecomposer();
-            var ans = ld.Decompose("misse's");
-            Console.WriteLine(string.Join("\n", ans.Select(words => string.Join(" ", words))));
-            Console.WriteLine();
-            ans = ld.Decompose("elmenerfe");
-            Console.WriteLine(string.Join("\n", ans.Select(words => string.Join(" ", words))));
-            Console.WriteLine();
-            ans = ld.Decompose("axelinielmejten");
-            Console.WriteLine(string.Join("\n", ans.Select(words => string.Join(" ", words))));
+            //foreach (var q in new string[] { "misse's", "elmenerfe", "limufhu'i", "axelinielmejten", "evistreharkinsen" })
+            foreach (var q in new string[] { "evistreharkinsen" })
+            {
+                var ans = ld.Decompose(q);
+                Console.WriteLine(string.Join("\n", ans.Select(words => string.Join(" ", words))));
+                Console.WriteLine();
+            }
         }
     }
 }
